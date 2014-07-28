@@ -1,0 +1,2 @@
+Weapons
+Wooden Sword,Melee,5,1,0,

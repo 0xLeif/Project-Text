@@ -1,0 +1,11 @@
+Weapons
+Bone Bow,Range,7,2.0,0,
+Iron Sword,Melee,5,2.5,0,
+Oak Staff,Magic,3,3.0,0,
+Bronze Dagger,Melee,2,1.0,0,
+Armor
+Leather Chaps,legs,1,1.0,0,
+Cloth Body,torso,0,1.0,0,
+Boots,feet,1,2.0,0,
+Items
+Bandaid,heal,25,.25,

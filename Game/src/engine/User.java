@@ -8,20 +8,34 @@ import protection.Armor;
 import weapons.Weapon;
 
 public class User {
-	private double health, mana, exp;
-	private int level, gold, score, expLimit;
-	private IObject rightHand, leftHand;
-	private Armor feet, legs, torso, head, back;
-	private final ArrayList<Weapon> wepInvo;
+	private String name;
+	private int password;
+	private double health;
+	private double mana;
+	private int level;
+	private double exp;
+	private ArrayList<Weapon> wepInvo;
+	private int score;
 	private boolean end;
+	private IObject rightHand;
+	private IObject leftHand;
+	private int gold;
+	private Armor feet;
+	private Armor legs;
+	private Armor torso;
+	private Armor head;
+	private Armor back;
+	private int expLimit;
 
 	/**
 	 * Constructor for the user
-	 * 
+	 *
 	 * @param name
 	 *            the users name
 	 */
-	public User() {
+	public User(String name) {
+		this.name = name;
+		password = 1234;
 		health = 100;
 		mana = 100;
 		level = 1;
@@ -72,7 +86,8 @@ public class User {
 				def += rightHand.getDef();
 			}
 		}
-		String summary = "\nHealth: " + health;
+		String summary = "Name: " + name;
+		summary += "\nHealth: " + health;
 		summary += "\nMana: " + mana;
 		summary += "\nScore: " + score;
 		summary += "\nGold: " + gold;
@@ -95,13 +110,13 @@ public class User {
 	}
 
 	public String equipment() {
-		String right;
-		String left;
-		String head;
-		String torso;
-		String legs;
-		String feet;
-		String back;
+		String right = "";
+		String left = "";
+		String head = "";
+		String torso = "";
+		String legs = "";
+		String feet = "";
+		String back = "";
 		if (rightHand == null) {
 			right = "Nothing";
 		} else {
@@ -149,6 +164,14 @@ public class User {
 	}
 
 	// Getters
+	public String getName() {
+		return name;
+	}
+
+	public int getPassword() {
+		return password;
+	}
+
 	public double getHealth() {
 		return health;
 	}
@@ -291,6 +314,14 @@ public class User {
 	}
 
 	// Setters
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setPassword(int password) {
+		this.password = password;
+	}
+
 	public void setHealth(double health) {
 		this.health = health;
 	}
@@ -356,13 +387,13 @@ public class User {
 	}
 
 	public int addGold(int gold) {
-		int posneg = (int) (Math.random() * 2);
-		int num = (int) ((Math.random() * 10) + 1);
-		if (posneg == 0) {
+		int posneg = (int)(Math.random()*2);
+		int num = (int)((Math.random()*10)+1);
+		if(posneg == 0){
 			System.out.println(gold - num);
 			this.gold += (gold - num);
 			return gold - num;
-		} else {
+		}else{
 			System.out.println(gold + num);
 			this.gold += (gold + num);
 			return gold + num;

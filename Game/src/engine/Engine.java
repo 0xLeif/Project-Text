@@ -1,133 +1,216 @@
 package engine;
 
-import gui.Client;
 import item.Item;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Scanner;
+import objects.IObject;
+import protection.Armor;
+import start.Fight;
+import weapons.Weapon;
+import maps.Move;
 import maps.Point;
 import methods.Invo;
 import monsters.Monster;
-import objects.IObject;
-import protection.Armor;
-import weapons.Weapon;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Scanner;
-
-import javax.swing.Timer;
-
-import battle.Fight;
-
-public class Engine implements KeyListener {
-	private User user;
-	private double expLimit;
-	private ArrayList<String> map;
-	private Point location;
-	private char curLoc;
-	private Client game;
-	private ArrayList<Point> pastLocs;
-	private String[][] cMap;
-	private ArrayList<IObject> invo, worldObjects, mapObjects;
-	private int Heading, startX, pickupItem, story, startY, level;
-	private boolean end, level2Lever, pickup, moved;
-	private ArrayList<String> regMap;
-
-	/**
-	 * Starts the game
-	 * 
-	 * @throws IOException
-	 */
-	public Engine() throws IOException {// TODO Make space attack
-		level = 1;
-		loadMap("./src/engine/maps/chapter1.txt");
-		mapStart();
-		loadObjects("./src/engine/items/chapter1.txt");
-		loadWorldObjects();
-		game = new Client();
-		game.getFrame().setVisible(true);
-		game.getGT().addKeyListener(this);
-		story = 0;
-		user = new User();
-		story();
-		Heading = 3;
-		invo = new ArrayList<IObject>();
-		location = new Point(startX, startY);
-		pastLocs = new ArrayList<Point>();
-		regMap = map;
-		curLoc = map.get((int) location.getY()).toString()
-				.charAt((int) (location.getX()));
-		expLimit = user.getLevel() * 1000;
-	}
+public class Engine {
+	private static User user;
+	private static ArrayList<IObject> invo;
+	private static Point location;
+	private static int Heading;
+	private static Move[] map;
+	private static int startX;
+	private static char curLoc;
+	private static int startY;
+	private static IObject[] worldObjects;
+	private static Move[] worldMaps;
+	private static boolean dev;
+	private static Move[] chapter1;
+	private static Move[] chapter2;
+	private static Move[] chapter3;
+	private static boolean end;
+	private static boolean level2Lever;
+	private static Move[] leverTest;
+	private static Move[] monsterTest;
+	private static Move[] devMap;
+	private static double expLimit;
+	private static Move[] pickupTest;
+	private static int level;
+	private static IObject[] chapter1Objects;
+	private static IObject[] mapObjects;
+	private static boolean pickup;
+	private static int pickupItem;
+	private static int story;
+	private static Move[] chapter1Dream;
+	private static IObject[] chapter2Objects;
 
 	/**
 	 * All the commands that a user can type in
-	 * 
-	 * @throws IOException
 	 */
-	public void run() throws IOException {
-		checker();
-		mapChecker();
-		repaint();
-		game.getGT().requestFocus();
-	}
-
-	private void attack() {
-		long startTime = System.currentTimeMillis();
-		char c = map.get((int) location.getY() - 1).toString()
-				.charAt((int) (location.getX()));
-		char letter;
-		String line = "";
-		regMap = map;
-		ArrayList<String> attackNorth = new ArrayList<String>();
-		for (int i = 0; i < map.size(); i++) {
-			if (i != location.getY() - 1) {
-				attackNorth.add(map.get(i));
-			} else {
-				for (int j = map.get(i).toString().length() - 1; j >= 0; j--) {
-					if (j != location.getX()) {
-						letter = map.get((int) location.getY()).toString()
-								.charAt(j);
-					} else {
-						letter = '|';
-					}
-					line = letter + line;
+	public static void menu() {
+		while (!end) {
+			//Sets to false but for certain commands it will turn true
+			checker();
+			mapChecker();
+			Scanner in = new Scanner(System.in);
+			// Command line
+			System.out.print(": ");
+			String action = in.nextLine().toLowerCase();
+			// A big "if" statement for all the commands
+			// of the game
+			if (action.equals("forward") || action.equals("go forward")
+					|| action.equals("move forward")) {
+				goForward();
+				pickup = false;
+			} else if (action.equals("back") || action.equals("go back")
+					|| action.equals("move back")) {
+				goBack();
+				pickup = false;
+			} else if (action.equals("left") || action.equals("turn left")) {
+				System.out.println("You turn left");
+				pickup = true;
+				turnLeft();
+			} else if (action.equals("right") || action.equals("turn right")) {
+				System.out.println("You turn right");
+				pickup = true;
+				turnRight();
+			} else if (action.equals("location")) {
+				pickup = true;
+				location();
+			} else if (action.equals("equipment")) {
+				pickup = true;
+				System.out.println(user.equipment());
+			} else if (action.equals("equip")) {
+				pickup = true;
+				equip();
+			} else if (action.equals("pickup")) {
+				pickUp();
+				pickup = false;
+			} else if (action.equals("map")) {
+				pickup = true;
+				showMap();
+			} else if (action.equals("status")) {
+				pickup = true;
+				System.out.println(user);
+			} else if (action.equals("help")) {
+				pickup = true;
+				help();
+			} else if (action.equals("commands")) {
+				pickup = true;
+				commands();
+			} else if (action.equals("look around")) {
+				pickup = true;
+				lookAround();
+			} else if (action.equals("look")) {
+				pickup = true;
+				look();
+			} else if (action.equals("invo")) {
+				pickup = true;
+				System.out.println(invo());
+			} else if (action.equals("exit")) {
+				System.out.println("goodbye");
+				break;
+			} else if (action.equals("pull lever")) {
+				pickup = true;
+				pullLever();
+			} else if (action.equals("clear")) {
+				pickup = true;
+				clear();
+			} else if (action.length() > 6) {
+				if (action.substring(0, 6).equals("equip ")) {
+					pickup = true;
+					equipItem(action.substring(6, action.length()));
+//				} else if (action.substring(0, 7).equals("pickup ")) {
+//					pickupItem(action.substring(7, action.length()));
+				} else {
+					System.out
+							.println("That is not a correct command please try again.");
 				}
-				attackNorth.add(line);
+			} else {
+				// If it is not in the command "if" block
+				// it must not be a command
+				pickup = true;
+				System.out
+						.println("That is not a correct command please try again.");
 			}
 		}
-		map = attackNorth;
-		System.out.println("Time: " + (System.currentTimeMillis() - startTime));
 	}
 
-	private void pullLever() {
+	public static void pullLever() {
 		if (curLoc == 'l') {
-			if (!level2Lever) {
-				removeCurLoc();
+			System.out.print("You pull the lever and ");
+			if (level2Lever == false) {
+				System.out.println("you hear something move!");
 				level2Lever = true;
+			} else {
+				System.out.println("nothing happens...");
 			}
+		} else {
+			System.out.println("There is nothing to pull.");
 		}
 		char letter;
 		String line = "";
-		ArrayList<String> newMap = new ArrayList<String>();
-		for (int i = 0; i < map.size(); i++) {
-			for (int j = map.get(i).toString().length() - 1; j >= 0; j--) {
-				if (map.get(i).toString().charAt(j) != 'L') {
-					letter = map.get(i).toString().charAt(j);
+		Move[] newMap = new Move[map.length];
+		for (int i = 0; i < map.length; i++) {
+			for (int j = map[i].toString().length() - 1; j >= 0; j--) {
+				if (map[i].toString().charAt(j) != 'L') {
+					letter = map[i].toString().charAt(j);
 				} else {
 					letter = 'o';
 				}
 				line = letter + line;
 			}
-			newMap.add(line);
+			newMap[i] = mapMaker(line);
 			line = "";
 		}
 		map = newMap;
 	}
 
-	private void equipItem(String item) {
+//	public static void pickupItem(String item) {
+//		int i = 0;
+//		boolean itemIsValid = false;
+//		for (int j = 0; j < mapObjects.length; j++) {
+//			// Makes sure the item is by them and they don't just put in a
+//			// random name
+//			if (mapObjects[j].getName().toLowerCase()
+//					.equals(item.toLowerCase())) {
+//				i = j;
+//				itemIsValid = true;
+//			}
+//		}
+//		if (itemIsValid) {
+//			invo.add(mapObjects[i]);
+//			System.out.println("You picked up " + mapObjects[i]);
+//		} else {
+//			System.out.println("You can not pick that up.");
+//		}
+//	}
+
+	public static void lookAround() {
+		// Does 4 turns and 4 looks
+		int end = Heading;
+		mapChecker();
+		for (int i = 0; i < 4; i++) {
+			checker();
+			if (Heading == 1) {
+				System.out.print("To the south ");
+			} else if (Heading == 2) {
+				System.out.print("To the east ");
+			} else if (Heading == 3) {
+				System.out.print("To the north ");
+			} else if (Heading == 4) {
+				System.out.print("To the west ");
+			}
+			look();
+			turnRight();
+		}
+		Heading = end;
+
+	}
+
+	public static void equipItem(String item) {
 		String equip = "";
 		Scanner in = new Scanner(System.in);
 		for (int j = 0; j < invo.size(); j++) {
@@ -140,75 +223,62 @@ public class Engine implements KeyListener {
 					if (invo.get(j).getLevel() > user.getLevel()) {
 						System.out.println("You are to low level for that!");
 					} else if (invo.get(j).getObjectType().equals("weapon")) {
-						if (invo.get(j).getType().equals("Range")) {
-							if (user.getLeftHand() != null) {
-								invo.add(user.getLeftHand());
-							}
+						// Set their right hand to that weapon
+						System.out
+								.println("Would you like to equip to your right or left hand?");
+						String option = in.nextLine().toLowerCase();
+						if (option.equals("right")) {
 							if (user.getRightHand() != null) {
 								invo.add(user.getRightHand());
 							}
-							user.setRightHand((invo.get(j)));
-						} else {
-							while (true) {
-								// Set their right hand to that weapon
-								System.out
-										.println("Would you like to equip to your right or left hand?");
-								String option = in.nextLine().toLowerCase();
-								if (option.contains("right")) {
-									if (user.getRightHand() != null) {
-										invo.add(user.getRightHand());
-									}
-									user.setRightHand((invo.get(j)));
-									break;
-								}
-								if (option.contains("left")) {
-									if (user.getLeftHand() != null) {
-										invo.add(user.getLeftHand());
-									}
-									user.setLeftHand((invo.get(j)));
-									break;
-								}
+							user.setRightHand(((Weapon) invo.get(j)));
+						}
+						if (option.equals("left")) {
+							if (user.getLeftHand() != null) {
+								invo.add(user.getLeftHand());
 							}
+							user.setLeftHand(((Weapon) invo.get(j)));
 						}
 						// Change the text
-						equip = (invo.get(j)).getName() + " equipped";
+						equip = ((Weapon) invo.get(j)).getName() + " equipped";
 						// Remove the item from the invo
 						invo.remove(j);
 						j = invo.size();
 						break;
 						// If it is armor
 					} else if (invo.get(j).getObjectType().equals("armor")) {
-						String type = invo.get(j).getType();
+						String type = ((Armor) invo.get(j)).getType();
 						// Check to see what type of armor it is
-						if (type.equals("Back")) {
+						switch (type) {
+						case "Back":
 							invo.add(user.getBack());
 							user.setBack((Armor) check(invo.get(j).getName()));
 							equip = invo.get(j).getName() + " equipped";
 							invo.remove(j);
 							j = invo.size();
 							break;
-						} else if (type.equals("Legs")) {
+						case "Legs":
 							invo.add(user.getLegs());
 							user.setLegs((Armor) check(invo.get(j).getName()));
 							equip = invo.get(j).getName() + " equipped";
 							invo.remove(j);
 							j = invo.size();
 							break;
-						} else if (type.equals("Torso")) {
+						case "Torso":
 							invo.add(user.getTorso());
 							user.setTorso((Armor) check(invo.get(j).getName()));
 							equip = invo.get(j).getName() + " equipped";
 							invo.remove(j);
 							j = invo.size();
 							break;
-						} else if (type.equals("Head")) {
+						case "Head":
 							invo.add(user.getHead());
 							user.setHead((Armor) check(invo.get(j).getName()));
 							equip = invo.get(j).getName() + " equipped";
 							invo.remove(j);
 							j = invo.size();
 							break;
-						} else if (type.equals("Feet")) {
+						case "Feet":
 							invo.add(user.getFeet());
 							user.setFeet((Armor) check(invo.get(j).getName()));
 							equip = invo.get(j).getName() + " equipped";
@@ -229,23 +299,24 @@ public class Engine implements KeyListener {
 	}
 
 	/**
-	 * 1 = south 2 = east 3 = north 4 = west m = monster e = end t = treasure x
-	 * = forest or wall
+	 * 1 = south 2 = east 3 = north 4 = west =========== m = monster e = end t =
+	 * treasure x = forest or wall
 	 */
-	private void look() {
-		char front;
+	public static void look() {
+		char front = map[(int) location.getY() - 1].toString().charAt(
+				(int) (location.getX()));
 		if (Heading == 1) {
-			front = map.get((int) location.getY() + 1).toString()
-					.charAt((int) (location.getX()));
+			front = map[(int) location.getY() + 1].toString().charAt(
+					(int) (location.getX()));
 		} else if (Heading == 3) {
-			front = map.get((int) location.getY() - 1).toString()
-					.charAt((int) (location.getX()));
+			front = map[(int) location.getY() - 1].toString().charAt(
+					(int) (location.getX()));
 		} else if (Heading == 2) {
-			front = map.get((int) location.getY()).toString()
-					.charAt((int) (location.getX() + 1));
+			front = map[(int) location.getY()].toString().charAt(
+					(int) (location.getX() + 1));
 		} else {
-			front = map.get((int) location.getY()).toString()
-					.charAt((int) (location.getX() - 1));
+			front = map[(int) location.getY()].toString().charAt(
+					(int) (location.getX() - 1));
 		}
 		if (front == 'm') {
 			System.out.println("There is a monster ahead!");
@@ -255,17 +326,16 @@ public class Engine implements KeyListener {
 			System.out.println("You see a trail.");
 		} else if (front == 'l') {
 			System.out.println("You see a lever ahead!");
-		} else {
-			System.out.println();
 		}
 	}
 
-	private void mapChecker() {
+	public static void mapChecker() {
 		// ALL MONSTER LOCATION//
-		curLoc = map.get((int) location.getY()).toString()
-				.charAt((int) (location.getX()));
-		if (Character.isDigit(curLoc)) {
-			location = checkLocs(new Point(location.getX(), location.getY()));
+		curLoc = map[(int) location.getY()].toString().charAt(
+				(int) (location.getX()));
+		if (curLoc == 'f') {// f == End Game
+			System.out.println("YOU WON!");
+			end = true;
 		} else if (curLoc == 'n') {
 			story();
 		} else if (curLoc == 'e') {// e == End Area
@@ -285,80 +355,107 @@ public class Engine implements KeyListener {
 			pickup = true;
 		}
 		if (curLoc == 'g') {
-			Monster goblin = new Monster("Goblin", 25, 1);
-			Fight goblinFight = new Fight(user, goblin, this);
+			Monster goblin = new Monster("Goblin", 150, 1);
+			Fight goblinFight = new Fight(user, goblin, "Plains");
 			System.out.println(goblinFight.battle());
-			if (goblinFight.isPlayerDead()) {
-				goSouth();
+			if (goblinFight.isPlayerDead() == true) {
+				goBack();
 				goblinFight.respawn();
 			}
-			if (goblinFight.playerWin()) {
+			if (goblinFight.playerWin() == true) {
 				removeCurLoc();
 				goblinFight.restart();
 				checker();
 			}
-			if (goblinFight.playerFlee()) {
-				goSouth();
+			if(goblinFight.playerFlee() == true){
+				goBack();
 				goblinFight.respawn();
 			}
 		} else if (curLoc == 't') {
-			Monster troll = new Monster("Troll", 100, 2);
-			Fight trollFight = new Fight(user, troll, this);
+			Monster troll = new Monster("Troll", 500, 5);
+			Fight trollFight = new Fight(user, troll, "Plains");
 			System.out.println(trollFight.battle());
-			if (trollFight.isPlayerDead()) {
-				goSouth();
+			if (trollFight.isPlayerDead() == true) {
+				goBack();
 				trollFight.respawn();
 			}
-			if (trollFight.playerWin()) {
+			if (trollFight.playerWin() == true) {
 				removeCurLoc();
 				trollFight.restart();
 				checker();
 			}
-			if (trollFight.playerFlee()) {
-				goSouth();
+			if(trollFight.playerFlee() == true){
+				goBack();
 				trollFight.respawn();
 			}
 		} else if (curLoc == 'd') {
-			if (user.getRightHand() != null || user.getLeftHand() != null) {
-				Monster first = new Monster();
-				Fight firstFight = new Fight(user, first, this);
-				System.out.println(firstFight.battle());
-				if (firstFight.isPlayerDead()) {
-					goSouth();
-					firstFight.respawn();
-				}
-				if (firstFight.playerWin()) {
-					removeCurLoc();
-					firstFight.restart();
-					checker();
-					story();
-				}
-			} else {
-				System.out
-						.println("Dad: You need to equip your sword before you attack the dummy.");
-				goSouth();
+			Monster first = new Monster();
+			Fight firstFight = new Fight(user, first, "Chapter1");
+			System.out.println(firstFight.battle());
+			if (firstFight.isPlayerDead() == true) {
+				goBack();
+				firstFight.respawn();
 			}
+			if (firstFight.playerWin() == true) {
+				removeCurLoc();
+				firstFight.restart();
+				checker();
+				story();
+			}
+		} else {
+
 		}
 	}
 
-	private void story() {
+	public static void story() {
 		if (story == 0) {
+			System.out.println("Dad: " + user.getName()
+					+ " go get the Wooden Sword in front of you.");
+			wait(700);
+			System.out
+					.println("System: "
+							+ "Use 'pickup wooden sword' then 'equip wooden sword', if you need help type in 'help' or 'commands'");
 		} else if (story == 1) {
+			System.out.println("Dad: Nice son!...");
+			wait(400);
+			System.out.println("Mom: " + user.getName()
+					+ " it is time for bed!");
+			wait(300);
+			System.out.println("System: Type 'map' to see where are you");
 		} else if (story == 2) {
+			System.out.println("System: You go to your bed and fall asleep...");
 			newLevel(1);
+			wait(1000);
+			System.out.println("3 Hours later");
+			wait(1000);
+			System.out.println("Mom: AHHHHHHH!");
 		} else if (story == 3) {
+			System.out
+					.println("System: You again see your mom and dad lying there lifeless, you see your raided house, and Sargent Gelecki walking away.");
+			wait(2000);
 			newLevel(2);
-			user.setRightHand(mapObjects.get(4));
-			user.setLegs((Armor) mapObjects.get(5));
-			user.setTorso((Armor) mapObjects.get(6));
-			user.setFeet((Armor) mapObjects.get(7));
-		} else if (story == 4) {
-			newLevel(3);
+			mapObjects = chapter2Objects;
+			user.setRightHand(chapter2Objects[4]);
+			user.setLegs((Armor) chapter2Objects[5]);
+			user.setTorso((Armor) chapter2Objects[6]);
+			user.setFeet((Armor) chapter2Objects[7]);
+			System.out.println("You wake from your dream..");
+			wait(500);
+			System.out
+					.println(user.getName() + ":"+ " Two days and I'll be at your camp (Bandit leader), you just wait...");
 		}
 		story++;
 	}
 
-	private void itemDraw() {
+	public static void wait(int i) {
+		try {
+			Thread.sleep(i);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static void itemDraw() {
 		int counter = 0;
 		for (IObject a : mapObjects) {
 			if (a.getObjectType().equals("item")) {
@@ -381,8 +478,8 @@ public class Engine implements KeyListener {
 		}
 		int itemNum = 0;
 		boolean breakNow = false;
-		while (!breakNow) {
-			itemNum = (int) ((Math.random() * mapObjects.size()) + 1);
+		while (breakNow == false) {
+			itemNum = (int) ((Math.random() * mapObjects.length) + 1);
 			for (Integer i : numbers) {
 				if (i == itemNum) {
 					breakNow = true;
@@ -391,11 +488,11 @@ public class Engine implements KeyListener {
 			}
 		}
 		pickupItem = itemNum;
-		System.out.println("You found " + mapObjects.get(itemNum));
+		System.out.println("You found " + mapObjects[itemNum]);
 		removeCurLoc();
 	}
 
-	private void weaponDraw() {
+	private static void weaponDraw() {
 		int counter = 0;
 		for (IObject a : mapObjects) {
 			if (a.getObjectType().equals("weapon")) {
@@ -418,11 +515,11 @@ public class Engine implements KeyListener {
 		}
 		int weaponNum = 0;
 		boolean breakNow = false;
-		while (!breakNow) {
-			weaponNum = (int) ((Math.random() * mapObjects.size()) + 1);
+		while (breakNow == false) {
+			weaponNum = (int) ((Math.random() * mapObjects.length) + 1);
 			for (Integer i : numbers) {
 				if (i == weaponNum) {
-					if (!mapObjects.get(weaponNum).getName().equals("Null")) {
+					if (!mapObjects[weaponNum].getName().equals("Null")) {
 						breakNow = true;
 						break;
 					}
@@ -430,11 +527,11 @@ public class Engine implements KeyListener {
 			}
 		}
 		pickupItem = weaponNum;
-		System.out.println("You found " + mapObjects.get(weaponNum));
+		System.out.println("You found " + mapObjects[weaponNum]);
 		removeCurLoc();
 	}
 
-	private void armorDraw() {
+	private static void armorDraw() {
 		int counter = 0;
 		for (IObject a : mapObjects) {
 			if (a.getObjectType().equals("armor")) {
@@ -457,8 +554,8 @@ public class Engine implements KeyListener {
 		}
 		int armNum = 0;
 		boolean breakNow = false;
-		while (!breakNow) {
-			armNum = (int) ((Math.random() * mapObjects.size()) + 1);
+		while (breakNow == false) {
+			armNum = (int) ((Math.random() * mapObjects.length) + 1);
 			for (Integer i : numbers) {
 				if (i == armNum) {
 					breakNow = true;
@@ -467,55 +564,49 @@ public class Engine implements KeyListener {
 			}
 		}
 		pickupItem = armNum;
-		System.out.println("You found " + mapObjects.get(armNum));
+		System.out.println("You found " + mapObjects[armNum]);
 		removeCurLoc();
 	}
 
-	private Point checkLocs(Point p) {
-		for (int y = 0; y < map.size(); y++) {
-			for (int x = 0; x < map.get(y).length(); x++) {
-				if (y != p.getY() && x != p.getX()) {
-					if (map.get(y).charAt(x) == map.get(p.getY()).charAt(
-							p.getX())) {
-						System.out.println(true);
-						return new Point(x, y);
-					}
-				} else {
-					System.out.println(false);
-				}
-			}
-		}
-		return p;
-	}
-
-	private void removeCurLoc() {
+	public static void removeCurLoc() {
 		char letter;
 		String line = "";
-		ArrayList<String> newMap = new ArrayList<String>();
-		for (int i = 0; i < map.size(); i++) {
+		Move[] newMap = new Move[map.length];
+		for (int i = 0; i < map.length; i++) {
 			if (i != location.getY()) {
-				newMap.add(map.get(i));
+				newMap[i] = map[i];
 			} else {
-				for (int j = map.get(i).toString().length() - 1; j >= 0; j--) {
+				for (int j = map[i].toString().length() - 1; j >= 0; j--) {
 					if (j != location.getX()) {
-						letter = map.get((int) location.getY()).toString()
+						letter = map[(int) location.getY()].toString()
 								.charAt(j);
 					} else {
 						letter = 'o';
 					}
 					line = letter + line;
 				}
-				newMap.add(line);
+				newMap[(int) location.getY()] = mapMaker(line);
 			}
 		}
 		map = newMap;
 	}
 
 	/**
+	 * Clears the menu so all text is gone
+	 */
+	// TODO: Clear the menu
+	public static void clear() {
+		for (int i = 0; i < 100; i++) {
+			System.out.println();
+		}
+		menu();
+	}
+
+	/**
 	 * Player types in equip then the console asks the user what they want to
 	 * equip
 	 */
-	private void equip() {
+	public static void equip() {
 		String equip = "";
 		Scanner in = new Scanner(System.in);
 		// Prints all the items in your equipment
@@ -528,7 +619,7 @@ public class Engine implements KeyListener {
 		// it is an item, weapon, or armor
 		for (int j = 0; j < invo.size(); j++) {
 			// When the item they entered equals a items name
-			// in their inventory
+			// in their invo
 			if (item != null) {
 				if (item.toLowerCase().equals(
 						invo.get(j).getName().toLowerCase())) {
@@ -536,75 +627,62 @@ public class Engine implements KeyListener {
 					if (invo.get(j).getLevel() > user.getLevel()) {
 						System.out.println("You are to low level for that!");
 					} else if (invo.get(j).getObjectType().equals("weapon")) {
-						if (invo.get(j).getType().equals("Range")) {
-							if (user.getLeftHand() != null) {
-								invo.add(user.getLeftHand());
-							}
+						// Set their right hand to that weapon
+						System.out
+								.println("Would you like to equip to your right or left hand?");
+						String option = in.nextLine().toLowerCase();
+						if (option.equals("right")) {
 							if (user.getRightHand() != null) {
 								invo.add(user.getRightHand());
 							}
-							user.setRightHand(invo.get(j));
-						} else {
-							// Set their right hand to that weapon
-							while (true) {
-								System.out
-										.println("Would you like to equip to your right or left hand?");
-								String option = in.nextLine().toLowerCase();
-								if (option.contains("right")) {
-									if (user.getRightHand() != null) {
-										invo.add(user.getRightHand());
-									}
-									user.setRightHand(invo.get(j));
-									break;
-								}
-								if (option.contains("left")) {
-									if (user.getLeftHand() != null) {
-										invo.add(user.getLeftHand());
-									}
-									user.setLeftHand(invo.get(j));
-									break;
-								}
+							user.setRightHand(((Weapon) invo.get(j)));
+						}
+						if (option.equals("left")) {
+							if (user.getLeftHand() != null) {
+								invo.add(user.getLeftHand());
 							}
+							user.setLeftHand(((Weapon) invo.get(j)));
 						}
 						// Change the text
-						equip = invo.get(j).getName() + " equipped";
+						equip = ((Weapon) invo.get(j)).getName() + " equipped";
 						// Remove the item from the invo
 						invo.remove(j);
 						j = invo.size();
 						break;
 						// If it is armor
 					} else if (invo.get(j).getObjectType().equals("armor")) {
-						String type = invo.get(j).getType();
+						String type = ((Armor) invo.get(j)).getType();
 						// Check to see what type of armor it is
-						if (type.equals("Back")) {
+						switch (type) {
+						case "Back":
 							invo.add(user.getBack());
 							user.setBack((Armor) check(invo.get(j).getName()));
 							equip = invo.get(j).getName() + " equipped";
 							invo.remove(j);
 							j = invo.size();
 							break;
-						} else if (type.equals("Legs")) {
+						case "Legs":
 							invo.add(user.getLegs());
 							user.setLegs((Armor) check(invo.get(j).getName()));
 							equip = invo.get(j).getName() + " equipped";
 							invo.remove(j);
 							j = invo.size();
 							break;
-						} else if (type.equals("Torso")) {
+						case "Torso":
 							invo.add(user.getTorso());
 							user.setTorso((Armor) check(invo.get(j).getName()));
 							equip = invo.get(j).getName() + " equipped";
 							invo.remove(j);
 							j = invo.size();
 							break;
-						} else if (type.equals("Head")) {
+						case "Head":
 							invo.add(user.getHead());
 							user.setHead((Armor) check(invo.get(j).getName()));
 							equip = invo.get(j).getName() + " equipped";
 							invo.remove(j);
 							j = invo.size();
 							break;
-						} else if (type.equals("Feet")) {
+						case "Feet":
 							invo.add(user.getFeet());
 							user.setFeet((Armor) check(invo.get(j).getName()));
 							equip = invo.get(j).getName() + " equipped";
@@ -613,6 +691,7 @@ public class Engine implements KeyListener {
 							break;
 						}
 					}
+
 					// If it is not a Weapon or Armor then
 					// it must be an item
 				} else {
@@ -627,34 +706,30 @@ public class Engine implements KeyListener {
 	 * moves forward one adds or subtracts x or y depending on which way they
 	 * are facing
 	 */
-	public void goNorth() {
-		// north == 3
+	public static void goForward() {
+		// north == 1
 		// east == 2
-		// south == 1
+		// south == 3
 		// west == 4
-		Heading = 3;
-		Point newLocation = new Point(location.getX(), location.getY() - 1);
-		char nextLoc = read((int) newLocation.getX(), (int) newLocation.getY());
-		if (nextLoc != 'x' && nextLoc != 'L') {
-			location = newLocation;
+		Point newLocation;
+		if (Heading == 1) {
+			newLocation = new Point(location.getX(), location.getY() + 1);
+		} else if (Heading == 2) {
+			newLocation = new Point(location.getX() + 1, location.getY());
+		} else if (Heading == 3) {
+			newLocation = new Point(location.getX(), location.getY() - 1);
+		} else {
+			newLocation = new Point(location.getX() - 1, location.getY());
 		}
-	}
-
-	public void goWest() {
-		Heading = 4;
-		Point newLocation = new Point(location.getX() - 1, location.getY());
 		char nextLoc = read((int) newLocation.getX(), (int) newLocation.getY());
 		if (nextLoc != 'x' && nextLoc != 'L') {
 			location = newLocation;
-		}
-	}
-
-	public void goEast() {
-		Heading = 2;
-		Point newLocation = new Point(location.getX() + 1, location.getY());
-		char nextLoc = read((int) newLocation.getX(), (int) newLocation.getY());
-		if (nextLoc != 'x' && nextLoc != 'L') {
-			location = newLocation;
+			System.out.println("You moved forward");
+		} else if (nextLoc == 'L') {
+			System.out
+					.println("You see a wall... but something seems different");
+		} else {
+			System.out.println("You can't go that way!");
 		}
 	}
 
@@ -662,48 +737,94 @@ public class Engine implements KeyListener {
 	 * Moves back one adds or subtracts x or y depending on which way they are
 	 * facing
 	 */
-	public void goSouth() {
-		Heading = 1;
-		Point newLocation = new Point(location.getX(), location.getY() + 1);
+	public static void goBack() {
+		Point newLocation;
+		if (Heading == 1) {
+			newLocation = new Point(location.getX(), location.getY() - 1);
+		} else if (Heading == 2) {
+			newLocation = new Point(location.getX() - 1, location.getY());
+		} else if (Heading == 3) {
+			newLocation = new Point(location.getX(), location.getY() + 1);
+		} else {
+			newLocation = new Point(location.getX() + 1, location.getY());
+		}
 		char nextLoc = read((int) newLocation.getX(), (int) newLocation.getY());
 		if (nextLoc != 'x' && nextLoc != 'L') {
 			location = newLocation;
+			System.out.println("You moved backwards");
+		} else if (nextLoc == 'L') {
+			System.out
+					.println("You see a wall... but something seems different");
+		} else {
+			System.out.println("You can't go that way!");
 		}
+	}
+
+	/**
+	 * Turns right once and changes the heading
+	 */
+	public static void turnLeft() {
+		Heading += 1;
+	}
+
+	/**
+	 * Turns left once and changes the heading
+	 */
+	public static void turnRight() {
+		Heading -= 1;
+	}
+
+	/**
+	 * Tells the user which direction they are facing and what their location is
+	 */
+	public static void location() {
+		if (Heading == 1) {
+			System.out.println("You are facing South.");
+		} else if (Heading == 2) {
+			System.out.println("You are facing East.");
+		} else if (Heading == 3) {
+			System.out.println("You are facing North.");
+		} else if (Heading == 4) {
+			System.out.println("You are facing West.");
+		} else {
+			System.out.println(Heading);
+		}
+		System.out.println("Your Coords are, " + location.toString());
 	}
 
 	/**
 	 * Player types in pickup then the console will ask what to pick up
 	 */
-	private void pickUp() {
-		if (pickup) {
+	public static void pickUp() {
+		if (pickup == true) {
 			System.out.println("You picked up "
-					+ mapObjects.get(pickupItem).getName());
-			invo.add(mapObjects.get(pickupItem));
-		} else {
+					+ mapObjects[pickupItem].getName());
+			invo.add(mapObjects[pickupItem]);
+		}else{
 			System.out.println("There is nothing to pick up...");
 		}
-		// else {
-		// int i = 0;
-		// boolean itemIsValid = false;
-		// Scanner in = new Scanner(System.in);
-		// System.out.print("Pickup what: ");
-		// String item = in.nextLine();
-		// for (int j = 0; j < mapObjects.length; j++) {
-		// // Makes sure the item is by them and they don't just put in a
-		// // random name
-		// if (mapObjects[j].getName().toLowerCase()
-		// .equals(item.toLowerCase())) {
-		// i = j;
-		// itemIsValid = true;
-		// }
-		// }
-		// if (itemIsValid) {
-		// invo.add(mapObjects[i]);
-		// System.out.println("You picked up " + mapObjects[i]);
-		// } else {
-		// System.out.println("You can not pick that up.");
-		// }
-		// }
+//		else {
+//			int i = 0;
+//			boolean itemIsValid = false;
+//			Scanner in = new Scanner(System.in);
+//			System.out.print("Pickup what: ");
+//			String item = in.nextLine();
+//			for (int j = 0; j < mapObjects.length; j++) {
+//				// Makes sure the item is by them and they don't just put in a
+//				// random name
+//				if (mapObjects[j].getName().toLowerCase()
+//						.equals(item.toLowerCase())) {
+//					i = j;
+//					itemIsValid = true;
+//				}
+//			}
+//			if (itemIsValid) {
+//				invo.add(mapObjects[i]);
+//				System.out.println("You picked up " + mapObjects[i]);
+//			} else {
+//				System.out.println("You can not pick that up.");
+//			}
+//		}
 	}
 
 	/**
@@ -712,7 +833,7 @@ public class Engine implements KeyListener {
 	 * @param acqs
 	 *            Array of invo
 	 */
-	public void saveItem(String path, Invo[] acqs) {
+	public static void saveItem(String path, Invo[] acqs) {
 		BufferedWriter file;
 
 		try {
@@ -730,7 +851,7 @@ public class Engine implements KeyListener {
 	/**
 	 * Lists of commands that the user name use
 	 */
-	private void commands() {
+	public static void commands() {
 		String commands = "Commands:\n-help";
 		commands += "\n-forward";
 		commands += "\n-back";
@@ -750,7 +871,7 @@ public class Engine implements KeyListener {
 	/**
 	 * Help and promotion message
 	 */
-	private void help() {
+	public static void help() {
 		String help = "Help:\n";
 		help += "This game is a text adventure created by";
 		help += "\nZach Eriksen, if you need to know your";
@@ -764,13 +885,144 @@ public class Engine implements KeyListener {
 	}
 
 	/**
+	 * Starts the game
+	 */
+	public static void start() {
+		// ALL DEFAULT MAPS, WEAPONS, AND ITEMS//
+		// new Weapon("Null", "Null", 0, 0, 0),
+		// new Weapon("Sword", "Melee", 5, 4.0, 1),// 0
+		// new Weapon("Staff", "Magic", 5, 4.0, 1),// 1
+		// new Weapon("Bow", "Range", 5, 4.0, 1),// 2
+		// new Weapon("Dagger", "Melee", 5, 4.0, 5),
+		// new Weapon("dumb1", "Melee", 0, 1.0, 0),
+		// new Weapon("dumb2", "Melee", 0, 1.0, 0),
+		// new Weapon("dumb3", "Melee", 0, 1.0, 0),
+		// new Weapon("dumb4", "Melee", 0, 1.0, 0),
+		// new Weapon("GodSword", "Melee", 10000, 1.0, 0),
+		// new Armor("Helm", "Head", 5, 4.0, 1),// 4
+		// new Armor("Top", "Torso", 5, 4.0, 1),// 5
+		// new Armor("Legs", "Legs", 5, 4.0, 1),// 6
+		// new Armor("Boots", "Feet", 5, 4.0, 1),// 7
+		// new Armor("Cape", "Back", 5, 4.0, 1),// 8
+		// new Armor("Dev Boots", "Feet", 10000, 1.0, 0),
+		/**
+		 * ITEMS HAVE THESE EFFECTS
+		 * 		-'heal'
+		 * 		-'mana'
+		 * 		-'str'
+		 */
+		chapter1Objects = new IObject[] { new Weapon("Null", "Null", 0, 0, 0),
+				new Weapon("Wooden Sword", "Melee", 1, 2.0, 0) };
+		chapter2Objects = new IObject[] { new Weapon("Null", "Null", 0, 0, 0),
+				new Weapon("Bone Bow", "Range", 4, 2.0, 0),
+				new Weapon("Iron Sword", "Melee", 3, 2.5, 0),
+				new Weapon("Oak Staff", "Magic", 2, 3.0, 0),
+				new Weapon("Bronze Dagger", "Melee", 2, 2, 0),
+				new Armor("Leather Chaps", "legs", 1, 1.0, 0),
+				new Armor("Cloth Body", "torso", 0, 1.0, 0),
+				new Armor("Boots", "feet", 1, 2.0, 0),
+				new Item("Bandaid", "heal", 25, .25)};
+		// MAPS NEW TO HAVE ONE 'S' FOR THEIR STARING POSITION//
+		// MONSTERS//
+		// g == Goblin
+		// t == troll
+		// NPCS//
+		// OBJECTS//
+		// l == lever && L == wall that will open
+		leverTest = new Move[] { mapMaker("xxx"), mapMaker("xLxxx"),
+				mapMaker("xsoolx"), mapMaker("xxxxx") };
+		monsterTest = new Move[] { mapMaker("xxx"), mapMaker("xtx"),
+				mapMaker("xtx"), mapMaker("xgx"), mapMaker("xtx"),
+				mapMaker("xtx"), mapMaker("xgx"), mapMaker("xgx"),
+				mapMaker("xgx"), mapMaker("xgx"), mapMaker("xgx"),
+				mapMaker("xwx"), mapMaker("xix"), mapMaker("xtx"),
+				mapMaker("xgx"), mapMaker("xsx"), mapMaker("xxx"), };
+		chapter1 = new Move[] { mapMaker("xxxxxxx"), mapMaker("xoooxxx"),
+				mapMaker("xxxoxox"), mapMaker("xooooox"), mapMaker("xxxnxxx"),
+				mapMaker("zxooxzz"), mapMaker("zxdxxzz"), mapMaker("zxwxzzz"),
+				mapMaker("zxsxzzz"), mapMaker("zxxxzzz") };
+		chapter1Dream = new Move[] { mapMaker("xxxxxxx"), mapMaker("xosoxxx"),
+				mapMaker("xxxnxox"), mapMaker("xooooox"), mapMaker("xxxoxxx"),
+				mapMaker("zxooxzz"), mapMaker("zxdxxzz"), mapMaker("zxoxzzz"),
+				mapMaker("zxoxzzz"), mapMaker("zxxxzzz") };
+		chapter2 = new Move[] { mapMaker("xxx"), mapMaker("xex"),
+				mapMaker("xox"), mapMaker("xox"), mapMaker("xox"),
+				mapMaker("xox"), mapMaker("xox"), mapMaker("xsx"),
+				mapMaker("xxx") };
+		chapter3 = new Move[] { mapMaker("xxxxx"), mapMaker("xfxxx"),
+				mapMaker("xLxxx"), mapMaker("xgxxx"), mapMaker("xotox"),
+				mapMaker("xoxlx"), mapMaker("xsxxx"), mapMaker("xxxxx") };
+		pickupTest = new Move[] { mapMaker("xxxxx"), mapMaker("xxwxx"),
+				mapMaker("xxsax"), mapMaker("xxixx") };
+		level = 1;
+		mapStart(monsterTest);
+		map = monsterTest;
+		mapObjects = chapter2Objects;
+		Scanner in = new Scanner(System.in);
+		String name = "";
+		level2Lever = false;
+		boolean end = false;
+		boolean done = false;
+		while (done != true) {
+			System.out.print("What is your name: ");
+			name = in.nextLine();
+			if (name.toLowerCase().equals("dev")) {
+				// Ask for the dev password three times
+				for (int i = 0; i < 3; i++) {
+					System.out.print("Password: ");
+					String pass = in.nextLine();
+					// If they got that password right
+					// stop asking and log them in
+					if (pass.equals("7895123")) {
+						dev = true;
+						i = 3;
+						done = true;
+					} else {
+						// Else ask again
+						System.out.println("Please try again");
+					}
+				}
+				// If they did not get the password right in the three
+				// attempts then ask for their name again
+				if (!dev) {
+				}
+			} else if (name.length() < 3) {
+				System.out.println("That name is too short...");
+			} else {
+				done = true;
+			}
+		}
+		story = 0;
+		user = new User(name);
+		story();
+		Heading = 3;
+		if (dev) {
+			invo = new ArrayList<IObject>();
+			// Sets so the dev will have a sword in their hand
+			user.setRightHand(new Weapon("GodSword", "God", 10000, 0, 0));
+		} else {
+			invo = new ArrayList<IObject>();
+		}
+		location = new Point(startX, startY);
+		curLoc = map[(int) location.getY()].toString().charAt(
+				(int) (location.getX()));
+		// String summary = "\nWelcome " + name + "!";
+		// summary += "\nIf you need help please type 'help'";
+		// summary +=
+		// "\nOr if you need to know the commands you can type in 'commands'";
+		// // summary += "\nThis is (World name), it is world of chaos"
+		// System.out.println(summary);
+		expLimit = user.getLevel() * 1000;
+	}
+
+	/**
 	 * Checks the name to see if it is a game item
 	 * 
 	 * @param name
 	 *            name of the the item they, most likely, want to pickup
 	 * @return the real item's info
 	 */
-	private IObject check(String name) {
+	public static IObject check(String name) {
 		for (IObject o : worldObjects) {
 			if (o.getName().toLowerCase().equals(name.toLowerCase())) {
 				return o;
@@ -782,7 +1034,7 @@ public class Engine implements KeyListener {
 	/**
 	 * @return prints out all of the Items and Weapons in the users Invo
 	 */
-	private String invo() {
+	public static String invo() {
 		String invoList = "";
 		invoList += "Weapons:";
 		invoList += "\n";
@@ -811,70 +1063,65 @@ public class Engine implements KeyListener {
 		}
 		return invoList;
 	}
-
+	
 	/**
 	 * Returns items for the fight method
 	 */
-	public ArrayList<Item> fightInvo() {
+	public static ArrayList<Item> fightInvo(){
 		ArrayList<Item> itemInvo = new ArrayList<Item>();
 		for (IObject a : invo) {
 			if (a.getObjectType().equals("item")) {
-				itemInvo.add((Item) a);
+				itemInvo.add((Item)a);
 			}
 		}
 		return itemInvo;
 	}
 
-	private void mapStart() {
-		for (int i = 0; i < map.size(); i++) {
-			for (int j = 0; j < map.get(i).length(); j++) {
-				if (map.get(i).toString().charAt(j) == 's') {
+	/**
+	 * @param str
+	 *            The map
+	 */
+	public static Move mapMaker(String str) {
+		return new Move(str);
+	}
+
+	public static void mapStart(Move[] map) {
+		for (int i = 0; i < map.length; i++) {
+			for (int j = 0; j < map[i].length(); j++) {
+				if (map[i].toString().charAt(j) == 's') {
 					startX = j;
 					startY = i;
 				}
 			}
 		}
-		int max = Integer.MIN_VALUE;
-		for (int i = 0; i < map.size(); i++) {
-			if (map.get(i).length() > max) {
-				max = map.get(i).length();
-			}
-		}
-		cMap = new String[map.size()][max];
-		for (int y = 0; y < cMap.length; y++) {
-			for (int x = 0; x < cMap[0].length; x++) {
-				cMap[y][x] = "  ";
-			}
-		}
 	}
 
-	private void newLevel(int level) {
+	public static void newLevel(int level) {
 		if (level == 1) {
-			loadMap("./src/engine/maps/chapter1dream.txt");
-			mapStart();
+			map = chapter1Dream;
+			mapStart(map);
 			location.setX(startX);
 			location.setY(startY);
-		} else {
-			loadMap("./src/engine/maps/chapter" + level + ".txt");
-			if (level == 2) {
-				mapStart();
-				location.setX(startX);
-				location.setY(startY);
-			} else if (level == 3) {
-				mapStart();
-				location.setX(startX);
-				location.setY(startY);
-			}
-			Heading = 3;
-			loadObjects("./src/engine/items/chapter" + level + ".txt");
+		} else if (level == 2) {
+			map = chapter2;
+			mapStart(map);
+			// mapObjects = chapter2Objects;
+			location.setX(startX);
+			location.setY(startY);
+		} else if (level == 3) {
+			map = chapter3;
+			mapStart(map);
+			// mapObjects = chapter3Objects;
+			location.setX(startX);
+			location.setY(startY);
 		}
 	}
 
-	private char read(int x, int y) {
-		return map.get(y).toString().charAt(x);
+	public static char read(int x, int y) {
+		return map[y].toString().charAt(x);
 	}
 
-	private void checker() {
+	public static void checker() {
 		if (!end) {
 			for (Weapon a : user.getInvo()) {
 				if (a.getName().equals("Null")) {
@@ -901,393 +1148,122 @@ public class Engine implements KeyListener {
 		}
 	}
 
-	private void showMap() throws IOException {
-		long startTime = System.currentTimeMillis();
-		game.clear();
-		game.hideText();
-		if (!pastLocs.contains(new Point(location.getX(), location.getY())))
-			pastLocs.add(new Point(location.getX(), location.getY()));
-		for (Point p : pastLocs) {
-			for (int y = p.getY() - 1; y < p.getY() + 2; y++) {
-				for (int x = p.getX() - 1; x < p.getX() + 2; x++) {
-					try {
-						if (y == location.getY() && x == location.getX()) {
-							cMap[y][x] = "c";
-						} else if (map.get(y).toString().charAt(x) == 'x'
-								|| map.get(y).toString().charAt(x) == 'L') {
-							cMap[y][x] = "x";
-						} else if (Character.isDigit(map.get(y).toString()
-								.charAt(x))) {
-							cMap[y][x] = "O";
-						} else if (map.get(y).toString().charAt(x) == 'o'
-								|| map.get(y).toString().charAt(x) == 's') {
-							cMap[y][x] = "o";
-						} else if (map.get(y).toString().charAt(x) == '|') {
-							cMap[y][x] = "|";
-						} else {
-							cMap[y][x] = "  ";
-						}
-					} catch (Exception e) {
-					}
+	public static String showMap() {
+		if (!dev) {
+			System.out
+					.println("Current Location : " + "("
+							+ (int) location.getX() + ","
+							+ (int) location.getY() + ")");
+			String sum = "";
+			int y = 0;
+			boolean start = true;
+			if (start == true) {
+				System.out.print(" ");
+				for (int topX = 0; topX < map[0].toString().length(); topX++) {
+					System.out.print(topX);
 				}
+				System.out.println();
+				start = false;
 			}
-		}
-		for (int y = 0; y < cMap.length; y++) {
-			for (int x = 0; x < cMap[0].length; x++) {
-				game.addText(cMap[y][x]);
-			}
-			game.addText("\n");
-		}
-		game.showText();
-		System.err.println("Time: " + (System.currentTimeMillis() - startTime));
-	}
-
-	private void loadObjects(String path) {
-		try {
-			mapObjects = new ArrayList<IObject>();
-			mapObjects.add(new Weapon("Null", "Null", 0, 0, 0));
-			// Open file
-			BufferedReader in = new BufferedReader(new FileReader(path));
-			// Read the file
-			String line;
-			Boolean weapon = false;
-			Boolean armor = false;
-			Boolean item = false;
-			while ((line = in.readLine()) != null) {
-				if (item) {
-					String text = "";
-					String name = null;// 0
-					String effect = null;// 1
-					int pwr = 0;// 2
-					double weight;// 3
-					int counter = 0;
-					for (int i = 0; i < line.length(); i++) {
-						if (line.charAt(i) == ',') {
-							if (counter == 0) {
-								name = text;
-								text = "";
-								counter++;
-							} else if (counter == 1) {
-								effect = text;
-								text = "";
-								counter++;
-							} else if (counter == 2) {
-								pwr = Integer.parseInt(text);
-								text = "";
-								counter++;
-							} else if (counter == 3) {
-								weight = Double.parseDouble(text);
-								text = "";
-								counter++;
-								Item w = new Item(name, effect, pwr, weight);
-								mapObjects.add(w);
-							}
-						} else {
-							text += line.charAt(i);
-						}
-
+			if (map.length > 9) {
+				for (int i = 0; i < map.length; i++) {
+					if (i < 10) {
+						System.out.print(y + " ");
+					} else {
+						System.out.print(y);
 					}
-				} else if (armor) {
-					String text = "";
-					String name = null;// 0
-					String type = null;// 1
-					int def = 0;// 2
-					double weight = 0;// 3
-					int level;// 4
-					int counter = 0;
-					for (int i = 0; i < line.length(); i++) {
-						if (line.charAt(i) == ',') {
-							if (counter == 0) {
-								name = text;
-								text = "";
-								counter++;
-							} else if (counter == 1) {
-								type = text;
-								text = "";
-								counter++;
-							} else if (counter == 2) {
-								def = Integer.parseInt(text);
-								text = "";
-								counter++;
-							} else if (counter == 3) {
-								weight = Double.parseDouble(text);
-								text = "";
-								counter++;
-							} else if (counter == 4) {
-								level = Integer.parseInt(text);
-								text = "";
-								counter = 0;
-								Armor w = new Armor(name, type, def, weight,
-										level);
-								mapObjects.add(w);
-							}
+					for (int j = 0; j < map[i].length(); j++) {
+						if (i == location.getY() && j == location.getX()) {
+							System.out.print("C");
+						} else if (map[i].toString().charAt(j) == 'x'
+								|| map[i].toString().charAt(j) == 'L') {
+							System.out.print("x");
+						} else if (map[i].toString().charAt(j) == 'z') {
+							System.out.print(" ");
 						} else {
-							text += line.charAt(i);
-						}
-
-					}
-				} else if (weapon) {
-					String text = "";
-					String name = null;// 0
-					String type = null;// 1
-					int dmg = 0;// 2
-					double weight = 0;// 3
-					int level;// 4
-					int counter = 0;
-					for (int i = 0; i < line.length(); i++) {
-						if (line.charAt(i) == ',') {
-							if (counter == 0) {
-								name = text;
-								text = "";
-								counter++;
-							} else if (counter == 1) {
-								type = text;
-								text = "";
-								counter++;
-							} else if (counter == 2) {
-								dmg = Integer.parseInt(text);
-								text = "";
-								counter++;
-							} else if (counter == 3) {
-								weight = Double.parseDouble(text);
-								text = "";
-								counter++;
-							} else if (counter == 4) {
-								level = Integer.parseInt(text);
-								text = "";
-								counter = 0;
-								Weapon w = new Weapon(name, type, dmg, weight,
-										level);
-								mapObjects.add(w);
-							}
-						} else {
-							text += line.charAt(i);
+							System.out.print("o");
 						}
 					}
+					System.out.println();
+					y++;
 				}
-				if (line.equals("Weapons"))
-					weapon = true;
-				else if (line.equals("Armor"))
-					armor = true;
-				else if (line.equals("Items"))
-					item = true;
-			}
-			// Loop through remaining lines;
-			// storing each line as an answer
-			// in the ArrayList of answers
-			// Close the file
-			in.close();
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void loadMap(String path) {
-		try {
-			map = new ArrayList<String>();
-			// Open file
-			BufferedReader in = new BufferedReader(new FileReader(path));
-			// Read the file
-			String line;
-			while ((line = in.readLine()) != null) {
-				// Read the first line as the exam name
-				map.add(line);
-			}
-			// Close the file
-			in.close();
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void repaint() {
-		try {
-			showMap();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void loadWorldObjects() {
-		for (int p = 1; p < new File("./src/engine/items/").listFiles().length + 1; p++) {
-			String path = "./src/engine/items/chapter" + p + ".txt";
-			try {
-				worldObjects = new ArrayList<IObject>();
-				// Open file
-				BufferedReader in = new BufferedReader(new FileReader(path));
-				// Read the file
-				String line;
-				Boolean weapon = false;
-				Boolean armor = false;
-				Boolean item = false;
-				while ((line = in.readLine()) != null) {
-					if (item) {
-						String text = "";
-						String name = null;// 0
-						String effect = null;// 1
-						int pwr = 0;// 2
-						double weight;// 3
-						int counter = 0;
-						// if(String name, String effect, int power, double
-						// weight) {
-						for (int i = 0; i < line.length(); i++) {
-							if (line.charAt(i) == ',') {
-								if (counter == 0) {
-									name = text;
-									text = "";
-									counter++;
-								} else if (counter == 1) {
-									effect = text;
-									text = "";
-									counter++;
-								} else if (counter == 2) {
-									pwr = Integer.parseInt(text);
-									text = "";
-									counter++;
-								} else if (counter == 3) {
-									weight = Double.parseDouble(text);
-									text = "";
-									counter++;
-									Item w = new Item(name, effect, pwr, weight);
-									worldObjects.add(w);
-								}
-							} else {
-								text += line.charAt(i);
-							}
-
-						}
-					} else if (armor) {
-						String text = "";
-						String name = null;// 0
-						String type = null;// 1
-						int def = 0;// 2
-						double weight = 0;// 3
-						int level;// 4
-						int counter = 0;
-						for (int i = 0; i < line.length(); i++) {
-							if (line.charAt(i) == ',') {
-								if (counter == 0) {
-									name = text;
-									text = "";
-									counter++;
-								} else if (counter == 1) {
-									type = text;
-									text = "";
-									counter++;
-								} else if (counter == 2) {
-									def = Integer.parseInt(text);
-									text = "";
-									counter++;
-								} else if (counter == 3) {
-									weight = Double.parseDouble(text);
-									text = "";
-									counter++;
-								} else if (counter == 4) {
-									level = Integer.parseInt(text);
-									text = "";
-									counter = 0;
-									Armor w = new Armor(name, type, def,
-											weight, level);
-									worldObjects.add(w);
-								}
-							} else {
-								text += line.charAt(i);
-							}
-
-						}
-					} else if (weapon) {
-						String text = "";
-						String name = null;// 0
-						String type = null;// 1
-						int dmg = 0;// 2
-						double weight = 0;// 3
-						int level;// 4
-						int counter = 0;
-						for (int i = 0; i < line.length(); i++) {
-							if (line.charAt(i) == ',') {
-								if (counter == 0) {
-									name = text;
-									text = "";
-									counter++;
-								} else if (counter == 1) {
-									type = text;
-									text = "";
-									counter++;
-								} else if (counter == 2) {
-									dmg = Integer.parseInt(text);
-									text = "";
-									counter++;
-								} else if (counter == 3) {
-									weight = Double.parseDouble(text);
-									text = "";
-									counter++;
-								} else if (counter == 4) {
-									level = Integer.parseInt(text);
-									text = "";
-									counter = 0;
-									Weapon w = new Weapon(name, type, dmg,
-											weight, level);
-									worldObjects.add(w);
-								}
-							} else {
-								text += line.charAt(i);
-							}
+				System.out.println();
+				return sum;
+			} else {
+				for (int i = 0; i < map.length; i++) {
+					System.out.print(y);
+					for (int j = 0; j < map[i].length(); j++) {
+						if (i == location.getY() && j == location.getX()) {
+							System.out.print("C");
+						} else if (map[i].toString().charAt(j) == 'x'
+								|| map[i].toString().charAt(j) == 'L') {
+							System.out.print("x");
+						} else {
+							System.out.print("o");
 						}
 					}
-					if (line.equals("Weapons"))
-						weapon = true;
-					else if (line.equals("Armor"))
-						armor = true;
-					else if (line.equals("Items"))
-						item = true;
+					System.out.println();
+					y++;
 				}
-				// Loop through remaining lines;
-				// storing each line as an answer
-				// in the ArrayList of answers
-				// Close the file
-				in.close();
-			} catch (FileNotFoundException e1) {
-				e1.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
+				System.out.println();
+				return sum;
+			}
+		} else {
+			// DEVELOPERS MAP //
+			System.out
+					.println("Current Location : " + "("
+							+ (int) location.getX() + ","
+							+ (int) location.getY() + ")");
+			String sum = "";
+			int y = 0;
+			boolean start = true;
+			if (start == true) {
+				System.out.print(" ");
+				for (int topX = 0; topX < map[0].toString().length(); topX++) {
+					System.out.print(topX);
+				}
+				System.out.println();
+				start = false;
+			}
+			if (map.length > 9) {
+				for (int i = 0; i < map.length; i++) {
+					if (i < 10) {
+						System.out.print(y + " ");
+					} else {
+						System.out.print(y);
+					}
+					for (int j = 0; j < map[i].length(); j++) {
+						if (i == location.getY() && j == location.getX()) {
+							System.out.print("C");
+						} else {
+							System.out.print(map[i].toString().charAt(j));
+						}
+					}
+					System.out.println();
+					y++;
+				}
+				System.out.println();
+				return sum;
+			} else {
+				for (int i = 0; i < map.length; i++) {
+					System.out.print(y);
+					for (int j = 0; j < map[i].length(); j++) {
+						if (i == location.getY() && j == location.getX()) {
+							System.out.print("C");
+						} else {
+							System.out.print(map[i].toString().charAt(j));
+						}
+					}
+					System.out.println();
+					y++;
+				}
+				System.out.println();
+				return sum;
 			}
 		}
 	}
 
-	public IObject getWorldObject(int i) {
-		return worldObjects.get(i);
-	}
-
-	@Override
-	public void keyTyped(KeyEvent e) {
-	}
-
-	@Override
-	public void keyPressed(KeyEvent e) {
-	}
-
-	@Override
-	public void keyReleased(KeyEvent e) {
-		map = regMap;
-		int c = e.getKeyCode();
-		if (c == KeyEvent.VK_W)
-			goNorth();
-		else if (c == KeyEvent.VK_S)
-			goSouth();
-		else if (c == KeyEvent.VK_D)
-			goEast();
-		else if (c == KeyEvent.VK_A)
-			goWest();
-		else if (c == KeyEvent.VK_SPACE)
-			attack();
-		try {
-			run();
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
+	public static IObject getWorldObject(int i) {
+		return worldObjects[i];
 	}
 }
